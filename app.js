@@ -62,13 +62,14 @@ app.post("/add", (request, response) => {
 
       response.json(responseData);
     }
+    else {
+      let responseData = {
+        errorCode: 0,
+        errorMessage: "Added successfully",
+      };
 
-    let responseData = {
-      errorCode: 0,
-      errorMessage: "Added successfully",
-    };
-
-    response.json(responseData);
+      response.json(responseData);
+    }
   });
 });
 
@@ -95,13 +96,15 @@ app.delete("/remove", (request, response) => {
 
         response.json(responseData);
       }
+      else {
+        let responseData = {
+          errorCode: 0,
+          errorMessage: "Deleted successfully",
+        };
 
-      let responseData = {
-        errorCode: 0,
-        errorMessage: "Deleted successfully",
-      };
+        response.json(responseData);
+      }
 
-      response.json(responseData);
     });
   }
 });
@@ -131,13 +134,15 @@ app.put("/modify", (request, response) => {
 
         response.json(responseData);
       }
+      else {
+        let responseData = {
+          errorCode: 0,
+          errorMessage: "Updated successfully",
+        };
 
-      let responseData = {
-        errorCode: 0,
-        errorMessage: "Updated successfully",
-      };
+        response.json(responseData);
+      }
 
-      response.json(responseData);
     });
   }
 });
