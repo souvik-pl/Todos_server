@@ -1,12 +1,27 @@
 // Server configurations
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const fs = require("fs");
+const mongoose = require("mongoose");
+const TodoDB = require("./todoModel");
 
 const app = express();
 const PORT = 3000;
 
+//DB configs
+mongoose.set('strictQuery', false);
+async function connectDB () {
+  try {
+    const db = await mongoose.connect(process.env.MONGO_URI);
+    console.log(`MongoDB connected: ${db.connection.host}`);
+  } catch (error) {
+    console.log(error);
+    process.exit(1);
+  }
+};
+
+// API configs
 const corsOptions = {
   origin: [
     "http://localhost:4200", // For frontend development server
@@ -17,9 +32,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
-
-// File System config
-const DB_NAME = "./db.json";
 
 // Server initialization
 function startServer() {
@@ -33,119 +45,121 @@ function startServer() {
 }
 
 // APIs
-app.get("/todos", (request, response) => {
-  const todoList = require(DB_NAME);
-  let responseData = {
-    errorCode: 0,
-    errorMessage: "Successful",
-    todos: todoList,
-  };
+app.get("/todos", async (request, response) => {
 
-  response.json(responseData);
+  try {
+    let todoList = await TodoDB.find();
+    let responseData = {
+      errorCode: 0,
+      errorMessage: "Successful",
+      todos: todoList,
+    };
+  
+    response.json(responseData);
+  } catch (error) {
+    let responseData = {
+      errorCode: 1,
+      errorMessage: error.message,
+    };
+  
+    response.json(responseData);
+  }
 });
 
-app.post("/add", (request, response) => {
-  let todo = {
+app.post("/add", async (request, response) => {
+  let newTodo = new TodoDB({
     id: request.body.id,
     data: request.body.data,
-  };
+  });
 
-  const todoList = require(DB_NAME);
-  todoList.unshift(todo);
+  try {
+    await newTodo.save();
+    let responseData = {
+      errorCode: 0,
+      errorMessage: "Added successfully",
+    };
 
-  fs.writeFile(DB_NAME, JSON.stringify(todoList), (error) => {
-    if (error) {
+    response.json(responseData);
+  } catch (error) {
+    let responseData = {
+      errorCode: 1,
+      errorMessage: error.message,
+    };
+
+    response.json(responseData);
+  }
+});
+
+app.delete("/remove", async (request, response) => {
+  let todoId = request.query.id;
+
+  try {
+    let deletedTodo = await TodoDB.findOneAndDelete({id: todoId});
+
+    if (deletedTodo) {
       let responseData = {
-        errorCode: 1,
-        errorMessage: "Failed to add todo",
+        errorCode: 0,
+        errorMessage: "Deleted successfully",
       };
-
+  
       response.json(responseData);
     }
     else {
       let responseData = {
-        errorCode: 0,
-        errorMessage: "Added successfully",
+        errorCode: 1,
+        errorMessage: "Item not found",
       };
-
+  
       response.json(responseData);
     }
-  });
-});
-
-app.delete("/remove", (request, response) => {
-  let id = request.query.id;
-  const todoList = require(DB_NAME);
-  let index = todoList.findIndex((todo) => todo.id === id);
-
-  if (index === -1) {
+  } catch (error) {
     let responseData = {
       errorCode: 1,
-      errorMessage: "Operation failed",
+      errorMessage: error.message,
     };
+
     response.json(responseData);
-  } else {
-    todoList.splice(index, 1);
-
-    fs.writeFile(DB_NAME, JSON.stringify(todoList), (error) => {
-      if (error) {
-        let responseData = {
-          errorCode: 1,
-          errorMessage: "Operation failed",
-        };
-
-        response.json(responseData);
-      }
-      else {
-        let responseData = {
-          errorCode: 0,
-          errorMessage: "Deleted successfully",
-        };
-
-        response.json(responseData);
-      }
-
-    });
   }
 });
 
-app.put("/modify", (request, response) => {
-  let id = request.body.id;
-  let data = request.body.data;
+app.put("/modify", async (request, response) => {
+  let todoId = request.body.id;
+  let todoData = request.body.data;
 
-  const todoList = require(DB_NAME);
-  let index = todoList.findIndex((todo) => todo.id === id);
+  try {
+    let updatedTodo = await TodoDB.findOneAndUpdate(
+      {id: todoId},     // Query condition
+      {data: todoData}, // Update field and value
+      {new: true}       // Return the updated data
+    );
 
-  if (index === -1) {
+    if (updatedTodo) {
+      let responseData = {
+        errorCode: 0,
+        errorMessage: "Modified successfully",
+      };
+  
+      response.json(responseData);
+    }
+    else {
+      let responseData = {
+        errorCode: 1,
+        errorMessage: "Item not found",
+      };
+  
+      response.json(responseData);
+    }
+  } catch (error) {
     let responseData = {
       errorCode: 1,
-      errorMessage: "Operation failed",
+      errorMessage: error.message,
     };
+
     response.json(responseData);
-  } else {
-    todoList[index].data = data;
-
-    fs.writeFile(DB_NAME, JSON.stringify(todoList), (error) => {
-      if (error) {
-        let responseData = {
-          errorCode: 1,
-          errorMessage: "Operation failed",
-        };
-
-        response.json(responseData);
-      }
-      else {
-        let responseData = {
-          errorCode: 0,
-          errorMessage: "Updated successfully",
-        };
-
-        response.json(responseData);
-      }
-
-    });
   }
 });
 
 // Client
-startServer();
+connectDB().then(() => {
+  startServer();
+});
