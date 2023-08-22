@@ -9,6 +9,12 @@ const TodoDB = require("./todoModel");
 const app = express();
 const PORT = 3000;
 
+//User credentials
+const USER = {
+  username: "souvik",
+  password: "Souvik@1",
+};
+
 //DB configs
 mongoose.set('strictQuery', false);
 async function connectDB () {
@@ -44,7 +50,30 @@ function startServer() {
   }
 }
 
-// APIs
+//Authentication API
+app.post("/authn", (request, response) => {
+  let username = request.body.username;
+  let password = request.body.password;
+
+  if (username === USER.username && password === USER.password) {
+    let responseData = {
+      errorCode: 0,
+      errorMessage: "Successful",
+    };
+  
+    response.json(responseData);
+  }
+  else {
+    let responseData = {
+      errorCode: 1,
+      errorMessage: "Invalid credentials",
+    };
+  
+    response.json(responseData);
+  }
+});
+
+// CRUD APIs
 app.get("/todos", async (request, response) => {
 
   try {
