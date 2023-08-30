@@ -17,7 +17,7 @@ const USER = {
 
 //DB configs
 mongoose.set('strictQuery', false);
-async function connectDB () {
+async function connectDB() {
   try {
     const db = await mongoose.connect(process.env.MONGO_URI);
     console.log(`MongoDB connected: ${db.connection.host}`);
@@ -61,7 +61,7 @@ app.post("/authn", (request, response) => {
       errorCode: 0,
       errorMessage: "Successful",
     };
-  
+
     response.json(responseData);
   }
   else {
@@ -69,7 +69,7 @@ app.post("/authn", (request, response) => {
       errorCode: 1,
       errorMessage: "Invalid credentials",
     };
-  
+
     response.json(responseData);
   }
 });
@@ -78,20 +78,20 @@ app.post("/authn", (request, response) => {
 app.get("/todos", async (request, response) => {
 
   try {
-    let todoList = await TodoDB.find();
+    let todoList = await TodoDB.find({}, { id: 1, data: 1, createdOn: 1, _id: 0 }).sort({ createdOn: -1 });;
     let responseData = {
       errorCode: 0,
       errorMessage: "Successful",
       todos: todoList,
     };
-  
+
     response.json(responseData);
   } catch (error) {
     let responseData = {
       errorCode: 1,
       errorMessage: error.message,
     };
-  
+
     response.json(responseData);
   }
 });
@@ -100,6 +100,7 @@ app.post("/add", async (request, response) => {
   let newTodo = new TodoDB({
     id: request.body.id,
     data: request.body.data,
+    createdOn: request.body.createdOn
   });
 
   try {
@@ -124,14 +125,14 @@ app.delete("/remove", async (request, response) => {
   let todoId = request.query.id;
 
   try {
-    let deletedTodo = await TodoDB.findOneAndDelete({id: todoId});
+    let deletedTodo = await TodoDB.findOneAndDelete({ id: todoId });
 
     if (deletedTodo) {
       let responseData = {
         errorCode: 0,
         errorMessage: "Deleted successfully",
       };
-  
+
       response.json(responseData);
     }
     else {
@@ -139,7 +140,7 @@ app.delete("/remove", async (request, response) => {
         errorCode: 1,
         errorMessage: "Item not found",
       };
-  
+
       response.json(responseData);
     }
   } catch (error) {
@@ -158,9 +159,9 @@ app.put("/modify", async (request, response) => {
 
   try {
     let updatedTodo = await TodoDB.findOneAndUpdate(
-      {id: todoId},     // Query condition
-      {data: todoData}, // Update field and value
-      {new: true}       // Return the updated data
+      { id: todoId },     // Query condition
+      { data: todoData }, // Update field and value
+      { new: true }       // Return the updated data
     );
 
     if (updatedTodo) {
@@ -168,7 +169,7 @@ app.put("/modify", async (request, response) => {
         errorCode: 0,
         errorMessage: "Modified successfully",
       };
-  
+
       response.json(responseData);
     }
     else {
@@ -176,7 +177,7 @@ app.put("/modify", async (request, response) => {
         errorCode: 1,
         errorMessage: "Item not found",
       };
-  
+
       response.json(responseData);
     }
   } catch (error) {
