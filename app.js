@@ -32,7 +32,8 @@ const corsOptions = {
   origin: [
     "http://localhost:4200", // For frontend development server
     "http://localhost:9876", // For frontend test server (karma)
-    "https://cheery-profiterole-caaf28.netlify.app" // For frontend production server
+    "https://cheery-profiterole-caaf28.netlify.app", // For frontend production server
+    "http://localhost:5173" // For temp purpose
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
 };
